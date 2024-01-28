@@ -12,22 +12,91 @@ contract MultiSwap {
     ISwapRouter public immutable swapRouter =
         ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 
-    address public constant USDC = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831;
-
+    address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     uint24 public constant poolFee = 3000;
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Not the owner");
-        _;
-    }
 
     constructor() {
         owner = msg.sender;
     }
 
+    function getTokenBalance(address token) external view returns (uint256) {
+        return IERC20(token).balanceOf(msg.sender);
+    }
+
     function swapPercent(
-        address[] _tokens,
-        uint256[] _percentages
+        address[] memory _tokens,
+        uint256[] memory _percentages
+    ) external returns (uint256 amountOut) {
+        require(_tokens.length == _percentages.length, "Invalid input");
+
+        for (uint256 i = 0; i < _tokens.length; i++) {
+            uint256 amountIn = (IERC20(USDC).balanceOf(msg.sender) *
+                _percentages[i]) / 100;
+            TransferHelper.safeTransferFrom(
+                USDC,
+                msg.sender,
+                address(this),
+                amountIn
+            );
+
+            TransferHelper.safeApprove(USDC, address(swapRouter), amountIn);
+
+            ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
+                .ExactInputSingleParams({
+                    tokenIn: USDC,
+                    tokenOut: _tokens[i],
+                    fee: poolFee,
+                    recipient: msg.sender,
+                    deadline: block.timestamp,
+                    amountIn: amountIn,
+                    amountOutMinimum: 0,
+                    sqrtPriceLimitX96: 0
+                });
+
+            amountOut = swapRouter.exactInputSingle(params);
+        }
+    }
+
+    function swapExact(
+        address[] memory _tokens,
+        uint256[] memory _amounts
+    ) external returns (uint256 amountOut) {
+        require(_tokens.length == _amounts.length, "Invalid input");
+        for (uint256 i = 0; i < _tokens.length; i++) {
+            uint256 amountIn = _amounts[i];
+
+            require(
+                IERC20(USDC).balanceOf(msg.sender) >= amountIn,
+                "Insufficient balance"
+            );
+            TransferHelper.safeTransferFrom(
+                USDC,
+                msg.sender,
+                address(this),
+                amountIn
+            );
+
+            TransferHelper.safeApprove(USDC, address(swapRouter), amountIn);
+
+            ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
+                .ExactInputSingleParams({
+                    tokenIn: USDC,
+                    tokenOut: _tokens[i],
+                    fee: poolFee,
+                    recipient: msg.sender,
+                    deadline: block.timestamp,
+                    amountIn: amountIn,
+                    amountOutMinimum: 0,
+                    sqrtPriceLimitX96: 0
+                });
+
+            amountOut = swapRouter.exactInputSingle(params);
+        }
+    }
+
+    function withdrawPercent(
+        address[] memory _tokens,
+        uint256[] memory _percentages
     ) external returns (uint256 amountOut) {
         require(_tokens.length == _percentages.length, "Invalid input");
 
@@ -49,8 +118,8 @@ contract MultiSwap {
 
             ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
                 .ExactInputSingleParams({
-                    tokenIn: USDC,
-                    tokenOut: _tokens[i],
+                    tokenIn: _tokens[i],
+                    tokenOut: USDC,
                     fee: poolFee,
                     recipient: msg.sender,
                     deadline: block.timestamp,
@@ -63,16 +132,16 @@ contract MultiSwap {
         }
     }
 
-    function swapExact(
-        address[] _tokens,
-        uint256[] _amounts
+    function withdrawExact(
+        address[] memory _tokens,
+        uint256[] memory _amounts
     ) external returns (uint256 amountOut) {
         require(_tokens.length == _amounts.length, "Invalid input");
         for (uint256 i = 0; i < _tokens.length; i++) {
             uint256 amountIn = _amounts[i];
 
             require(
-                IERC20(USDC).balanceOf(msg.sender) >= amountIn,
+                IERC20(_tokens[i]).balanceOf(msg.sender) >= amountIn,
                 "Insufficient balance"
             );
             TransferHelper.safeTransferFrom(
@@ -90,8 +159,8 @@ contract MultiSwap {
 
             ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
                 .ExactInputSingleParams({
-                    tokenIn: USDC,
-                    tokenOut: _tokens[i],
+                    tokenIn: _tokens[i],
+                    tokenOut: USDC,
                     fee: poolFee,
                     recipient: msg.sender,
                     deadline: block.timestamp,
@@ -102,9 +171,5 @@ contract MultiSwap {
 
             amountOut = swapRouter.exactInputSingle(params);
         }
-    }
-
-    function getTokenBalance(address token) external view returns (uint256) {
-        return IERC20(token).balanceOf(msg.sender);
     }
 }
