@@ -24,27 +24,36 @@ contract MultiSwap {
     }
 
     function swapPercent(
-        address[] memory _tokens,
+        address[] memory _tokensIn,
+        address[] memory _tokensOut,
         uint256[] memory _percentages
     ) external returns (uint256 amountOut) {
-        require(_tokens.length == _percentages.length, "Invalid input");
+        require(
+            _tokensIn.length == _tokensOut.length == _percentages.length,
+            "Invalid input"
+        );
 
-        for (uint256 i = 0; i < _tokens.length; i++) {
-            uint256 amountIn = (IERC20(USDC).balanceOf(msg.sender) *
+        for (uint256 i = 0; i < _tokensOut.length; i++) {
+            uint256 amountIn = (IERC20(_tokensIn[i]).balanceOf(msg.sender) *
                 _percentages[i]) / 100;
+
             TransferHelper.safeTransferFrom(
-                USDC,
+                _tokensIn[i],
                 msg.sender,
                 address(this),
                 amountIn
             );
 
-            TransferHelper.safeApprove(USDC, address(swapRouter), amountIn);
+            TransferHelper.safeApprove(
+                _tokensIn[i],
+                address(swapRouter),
+                amountIn
+            );
 
             ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
                 .ExactInputSingleParams({
-                    tokenIn: USDC,
-                    tokenOut: _tokens[i],
+                    tokenIn: _tokensIn[i],
+                    tokenOut: _tokensOut[i],
                     fee: poolFee,
                     recipient: msg.sender,
                     deadline: block.timestamp,
@@ -58,30 +67,38 @@ contract MultiSwap {
     }
 
     function swapExact(
-        address[] memory _tokens,
+        address[] memory _tokensIn,
+        address[] memory _tokensOut,
         uint256[] memory _amounts
     ) external returns (uint256 amountOut) {
-        require(_tokens.length == _amounts.length, "Invalid input");
-        for (uint256 i = 0; i < _tokens.length; i++) {
+        require(
+            _tokensIn.length == _tokensOut.length == _amounts.length,
+            "Invalid input"
+        );
+        for (uint256 i = 0; i < _tokensOut.length; i++) {
             uint256 amountIn = _amounts[i];
 
             require(
-                IERC20(USDC).balanceOf(msg.sender) >= amountIn,
+                IERC20(_tokensIn[i]).balanceOf(msg.sender) >= amountIn,
                 "Insufficient balance"
             );
             TransferHelper.safeTransferFrom(
-                USDC,
+                _tokensIn[i],
                 msg.sender,
                 address(this),
                 amountIn
             );
 
-            TransferHelper.safeApprove(USDC, address(swapRouter), amountIn);
+            TransferHelper.safeApprove(
+                _tokensIn[i],
+                address(swapRouter),
+                amountIn
+            );
 
             ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
                 .ExactInputSingleParams({
-                    tokenIn: USDC,
-                    tokenOut: _tokens[i],
+                    tokenIn: _tokensIn[i],
+                    tokenOut: _tokensOut[i],
                     fee: poolFee,
                     recipient: msg.sender,
                     deadline: block.timestamp,
@@ -95,31 +112,32 @@ contract MultiSwap {
     }
 
     function withdrawPercent(
-        address[] memory _tokens,
+        address[] memory _tokensIn,
+        address[] memory _tokensOut,
         uint256[] memory _percentages
     ) external returns (uint256 amountOut) {
-        require(_tokens.length == _percentages.length, "Invalid input");
+        require(_tokensIn.length == _percentages.length, "Invalid input");
 
-        for (uint256 i = 0; i < _tokens.length; i++) {
+        for (uint256 i = 0; i < _tokensIn.length; i++) {
             uint256 amountIn = (IERC20(USDC).balanceOf(msg.sender) *
                 _percentages[i]) / 100;
             TransferHelper.safeTransferFrom(
-                _tokens[i],
+                _tokensIn[i],
                 msg.sender,
                 address(this),
                 amountIn
             );
 
             TransferHelper.safeApprove(
-                _tokens[i],
+                _tokensIn[i],
                 address(swapRouter),
                 amountIn
             );
 
             ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
                 .ExactInputSingleParams({
-                    tokenIn: _tokens[i],
-                    tokenOut: USDC,
+                    tokenIn: _tokensIn[i],
+                    tokenOut: _tokensOut[i],
                     fee: poolFee,
                     recipient: msg.sender,
                     deadline: block.timestamp,
@@ -133,34 +151,35 @@ contract MultiSwap {
     }
 
     function withdrawExact(
-        address[] memory _tokens,
+        address[] memory _tokensIn,
+        address[] memory _tokensOut,
         uint256[] memory _amounts
     ) external returns (uint256 amountOut) {
-        require(_tokens.length == _amounts.length, "Invalid input");
-        for (uint256 i = 0; i < _tokens.length; i++) {
+        require(_tokensIn.length == _amounts.length, "Invalid input");
+        for (uint256 i = 0; i < _tokensIn.length; i++) {
             uint256 amountIn = _amounts[i];
 
             require(
-                IERC20(_tokens[i]).balanceOf(msg.sender) >= amountIn,
+                IERC20(_tokensIn[i]).balanceOf(msg.sender) >= amountIn,
                 "Insufficient balance"
             );
             TransferHelper.safeTransferFrom(
-                _tokens[i],
+                _tokensIn[i],
                 msg.sender,
                 address(this),
                 amountIn
             );
 
             TransferHelper.safeApprove(
-                _tokens[i],
+                _tokensIn[i],
                 address(swapRouter),
                 amountIn
             );
 
             ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
                 .ExactInputSingleParams({
-                    tokenIn: _tokens[i],
-                    tokenOut: USDC,
+                    tokenIn: _tokensIn[i],
+                    tokenOut: _tokensOut[i],
                     fee: poolFee,
                     recipient: msg.sender,
                     deadline: block.timestamp,
