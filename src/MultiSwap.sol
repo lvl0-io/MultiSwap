@@ -27,10 +27,9 @@ contract MultiSwap {
         address[] memory _tokensOut,
         uint256[] memory _percentages
     ) external returns (uint256 amountOut) {
-        require(
-            _tokensIn.length == _tokensOut.length == _percentages.length,
-            "Invalid input"
-        );
+        require(_tokensOut.length == _percentages.length, "Invalid input");
+
+        require(_tokensIn.length == _tokensOut.length, "Invalid input");
 
         for (uint256 i = 0; i < _tokensOut.length; i++) {
             uint256 amountIn = (IERC20(_tokensIn[i]).balanceOf(msg.sender) *
@@ -70,10 +69,9 @@ contract MultiSwap {
         address[] memory _tokensOut,
         uint256[] memory _amounts
     ) external returns (uint256 amountOut) {
-        require(
-            _tokensIn.length == _tokensOut.length == _amounts.length,
-            "Invalid input"
-        );
+        require(_tokensOut.length == _percentages.length, "Invalid input");
+        require(_tokensIn.length == _tokensOut.length, "Invalid input");
+
         for (uint256 i = 0; i < _tokensOut.length; i++) {
             uint256 amountIn = _amounts[i];
 
